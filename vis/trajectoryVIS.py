@@ -1,8 +1,8 @@
 import os
-
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
+from scipy import spatial
 import matplotlib.pyplot as plt
 from matplotlib import collections as mc
-from mpl_toolkits.mplot3d import Axes3D
 import h5py
 import random
 import numpy as np
@@ -11,10 +11,18 @@ from data_process.SpatialRegionTools import gps2vocab, gps2cell, cell2coord
 
 import warnings
 
-from poi_process.read_poi import getPOI_Coor
+from poi_process.read_poi import getPOI_Coor, buildKDTree, getPOI_CoorFiltered
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+
+class FileInfo:
+    def __init__(self):
+        self.trj_data_path = '../../5月/'
+        self.trj_data_date = '05月01日'
+        self.trj_file_name = '20200501_hz.h5'
+        self.poi_dir = '../../hangzhou-POI'
+        self.poi_file_name = '商务住宅.xlsx'
 
 def trip2seq(region, trj_data):
     seq = []
@@ -33,25 +41,28 @@ def randomcolor():
 
 
 colorsOfLabel = [
-    "#8ECFC9", "#2878b5", "#F27970", "#A1A9D0", "#C4A5DE", "#63b2ee", "#9192ab", "#3b6291", "#bf7334", "#3b8ba1", "#ffbd66",
-    "#FFBE7A", "#9ac9db", "#BB9727", "#F0988C", "#F6CAE5", "#76da91", "#7898e1", "#943c39", "#3f6899", "#c97937", "#f74d4d",
-    "#FA7F6F", "#f8ac8c", "#54B345", "#B883D4", "#96CCCB", "#f8cb7f", "#efa666", "#779043", "#9c403d", "#002c53", "#2455a4",
-    "#82B0D2", "#c82423", "#32B897", "#9E9E9E", "#8983BF", "#f89588", "#eddd86", "#624c7c", "#7d9847", "#ffa510", "#41b7ac",
-    "#BEB8DC", "#ff8884", "#05B9E2", "#CFEAF1", "#C76DA2", "#7cd6cf", "#9987ce", "#388498", "#675083", "#0c84c6", "#E7DAD2",
+    "#8ECFC9", "#2878b5", "#F27970", "#A1A9D0", "#C4A5DE", "#63b2ee", "#9192ab", "#3b6291", "#bf7334", "#3b8ba1",
+    "#ffbd66",
+    "#FFBE7A", "#9ac9db", "#BB9727", "#F0988C", "#F6CAE5", "#76da91", "#7898e1", "#943c39", "#3f6899", "#c97937",
+    "#f74d4d",
+    "#FA7F6F", "#f8ac8c", "#54B345", "#B883D4", "#96CCCB", "#f8cb7f", "#efa666", "#779043", "#9c403d", "#002c53",
+    "#2455a4",
+    "#82B0D2", "#c82423", "#32B897", "#9E9E9E", "#8983BF", "#f89588", "#eddd86", "#624c7c", "#7d9847", "#ffa510",
+    "#41b7ac",
+    "#BEB8DC", "#ff8884", "#05B9E2", "#CFEAF1", "#C76DA2", "#7cd6cf", "#9987ce", "#388498", "#675083", "#0c84c6",
+    "#E7DAD2",
     "#63b2ee", "#76da91"
 ]
 
 
-def getTrips(use_cell=False):
-    data_path = '../../5月/'
-    data_date = '05月01日'
-    file_name = '20200501_hz.h5'
+def getTrips(fileInfo, filter_step, use_cell=False):
+    data_path = fileInfo.trj_data_path
+    data_date = fileInfo.trj_data_date
+    file_name = fileInfo.trj_file_name
     file_path = data_path + data_date + '/' + file_name
 
     with open("../data/region.pkl", 'rb') as file:
         region = pickle.loads(file.read())
-
-    filter_step = 500
 
     # '../make_data/20200101_jianggan.h5'
     with h5py.File(file_path, 'r') as f:
@@ -81,8 +92,8 @@ def getTrips(use_cell=False):
             return trips, lines
 
 
-def showTrips(use_cell=False):
-    trips, lines = getTrips(use_cell)
+def showTrips(fileInfo, filter_step, use_cell=False):
+    trips, lines = getTrips(fileInfo, filter_step, use_cell)
     print('可视化轨迹数量：', len(trips))
     colors = [randomcolor() for i in range(len(trips))]
 
@@ -94,18 +105,19 @@ def showTrips(use_cell=False):
         ax.add_collection(lc)
     for index, trip in enumerate(trips):
         color = colors[index]
-        ax.scatter(trip[:, 0], trip[:, 1], c=color, marker='o')
+        ax.scatter(trip[:, 0], trip[:, 1], s=1, c=color, marker='o')
 
     ax.set_xlabel('lon')  # 画出坐标轴
     ax.set_ylabel('lat')
     plt.show()
 
 
-def showPOI_Trips():
-    data_dir = '../../hangzhou-POI'
-    file_name = '商务住宅.xlsx'
-    poi_coor = getPOI_Coor(data_dir, file_name)
-    trips, lines = getTrips()
+def showPOI_Trips(fileInfo, filter_step, use_cell):
+    trips, lines = getTrips(fileInfo, filter_step, use_cell)
+    poi_coor = getPOI_Coor(fileInfo.poi_dir, fileInfo.poi_file_name)
+    kdtree = buildKDTree(poi_coor)
+    poi_coor = getPOI_CoorFiltered(trips, poi_coor, kdtree, 1)  # 此处的 poi_coor 是根据轨迹起点、终点过滤后的
+
     min_longitude = float('inf')
     min_latitude = float('inf')
     max_longitude = float('-inf')
@@ -144,13 +156,17 @@ def showPOI_Trips():
     plt.show()
 
 
-
 if __name__ == "__main__":
-    # showTrips(True)
-    showPOI_Trips()
-
-
-
+    fileInfo = FileInfo()
+    fileInfo.trj_data_path = '../../5月/'
+    fileInfo.trj_data_date = '05月01日'
+    fileInfo.trj_file_name = '20200501_hz.h5'
+    fileInfo.poi_dir = '../../hangzhou-POI'
+    fileInfo.poi_file_name = '商务住宅.xlsx'
+    filter_step = 50
+    use_cell = False
+    # showTrips(fileInfo, filter_step, use_cell)
+    showPOI_Trips(fileInfo, filter_step, use_cell)
 
     # # print(os.listdir('../../5月/05月01日'))
     # data_path = '../../5月/'

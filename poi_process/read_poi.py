@@ -1,6 +1,9 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from scipy import spatial
+
+
 # import POI
 
 
@@ -21,6 +24,37 @@ def getPOI_Coor(data_dir, file_name):
     return poi_coor
 
 
+"""
+将所有POI坐标放入 KDTree，方便查找邻近点，从距离上判断连通性
+:param: GPS 经纬度格式的POI数组
+:return 存储POI坐标的 KDTree
+"""
+def buildKDTree(pois):
+    kdtree = spatial.KDTree(pois)
+    return kdtree
+
+
+"""
+将轨迹的头尾节点坐标放入 points，分别查找邻近点，从距离上判断连通性，返回通过轨迹头尾节点过滤后的poi数组
+:param: trips：经纬度格式的轨迹数组，poi_coor：所有经纬度表示的POI节点，存储所有轨迹头尾节点经纬度坐标的 KDTree、最邻近的点数 k
+:return coor_filtered：[[经度, 纬度], [lon, lat], ...] 形状的经过过滤的坐标数组
+"""
+def getPOI_CoorFiltered(trips, poi_coor, kdtree, k):
+    points = []
+    for trip in trips:
+        points.append([trip[0][0], trip[0][1]])
+        points.append([trip[-1][0], trip[-1][1]])
+    topk_dist, topk_id = kdtree.query(points, k)
+    coor_filtered = []
+    for row in topk_id:
+        if k == 1:
+            coor_filtered.append(poi_coor[row])
+        else:
+            for id in row:
+                coor_filtered.append(poi_coor[id])
+    return coor_filtered
+
+
 def showPOI_Coor(poi_coor):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()
@@ -36,7 +70,6 @@ if __name__ == "__main__":
     file_name = '商务住宅.xlsx'
 
     showPOI_Coor(getPOI_Coor(data_dir, file_name))
-
 
 # data_dir = '../../hangzhou-POI'
 # print(os.listdir(data_dir))
@@ -66,5 +99,3 @@ if __name__ == "__main__":
 # ax.set_xlabel('lon')  # 画出坐标轴
 # ax.set_ylabel('lat')
 # plt.show()
-
-
