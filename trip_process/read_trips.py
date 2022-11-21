@@ -33,14 +33,24 @@ def getTrips(fileInfo, filter_step, use_cell=False):
                 locations = f['trips'][str(i + 1)]
                 trip = []
                 line = []
-                for (lon, lat) in locations:
-                    trip.append([lon, lat])
-                # 将 GPS经纬度表示的轨迹 转换为 网格点经纬度表示
-                if use_cell:
-                    for idx, (lon, lat) in enumerate(trip):
-                        cell = gps2cell(region, lon, lat)
-                        x, y = cell2coord(region, cell)
-                        trip[idx] = [x, y]
+                if region.needTime:
+                    timestamp = f["timestamps"][str(i + 1)]
+                    for ((lon, lat), time) in zip(locations, timestamp):
+
+                        if use_cell:  # 将 GPS经纬度表示的轨迹 转换为 网格点经纬度表示
+                            cell = gps2cell(region, lon, lat)
+                            x, y = cell2coord(region, cell)
+                            trip.append([x, y, time])
+                        else:
+                            trip.append([lon, lat, time])
+                else:
+                    for (lon, lat) in locations:
+                        if use_cell:  # 将 GPS经纬度表示的轨迹 转换为 网格点经纬度表示
+                            cell = gps2cell(region, lon, lat)
+                            x, y = cell2coord(region, cell)
+                            trip.append([x, y])
+                        else:
+                            trip.append([lon, lat])
                 # print(trip)
                 for j in range(len(trip) - 1):
                     line.append([(trip[j][0], trip[j][1]), (trip[j + 1][0], trip[j + 1][1])])

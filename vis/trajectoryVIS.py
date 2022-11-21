@@ -121,9 +121,9 @@ if __name__ == "__main__":
     fileInfo.poi_dir = '../../hangzhou-POI'
     fileInfo.poi_file_name = '商务住宅.xlsx'
     filter_step = 50
-    use_cell = False
+    use_cell = True
     # showTrips(fileInfo, filter_step, use_cell)
-    showPOI_Trips(fileInfo, filter_step, use_cell)
+    showPOI_Trips(fileInfo, filter_step, False) # poi暂时没有网格化，因此同时可视化轨迹和poi时，轨迹也不能网格化，否则坐标不同，报错
 
     # # print(os.listdir('../../5月/05月01日'))
     # data_path = '../../5月/'

@@ -7,7 +7,7 @@
 	"cityname": "hangzhou",
 	"h5dirname": "../make_data",
 	"paramfile": "../data/hangzhou-param-cell",
-	"needTime": 0,
+	"needTime": 1,
 	"timefuzzysize": 1,
 	"timestart": 0,
 	"spatiosplitobj": "../spatio_splits/stme",

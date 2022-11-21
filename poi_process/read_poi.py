@@ -11,7 +11,7 @@ from scipy import spatial
 
 
 def getPOI_Coor(data_dir, file_name):
-    print(os.listdir(data_dir))
+    # print(os.listdir(data_dir))
     print('当前文件: ', file_name)
     file_list = os.listdir('../../hangzhou-POI')
     for i in range(len(file_list)):
