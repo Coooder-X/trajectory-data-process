@@ -61,7 +61,7 @@ class Graph:
 
     def getLineGraph(self):
         origin_G = self.G
-        print('getLineGraph getGraph', origin_G)
+        # print('getLineGraph getGraph', origin_G)
         # print('origin_G', origin_G.nodes.data())
         # print('origin_G edges', origin_G.edges())
         # print('origin_G edges data', origin_G.edges.data())
@@ -92,27 +92,29 @@ class Graph:
             L.edges[(st, end, 0)]['Ledge_feature'] = self.dict[connectPoint].feature  # 'feat of origin point ' + str(connectPoint)
 
         # print('line_graph', L.nodes.data())
-        print(L.edges.data())
+        # print(L.edges.data())
         return L
 
     def drawLineGraph(self):
         L = self.getLineGraph()
-        pos = nx.circular_layout(L)
+        print('线图中的点数', len(L.nodes))
+        print('线图中的边数', len(L.edges))
+        pos = nx.random_layout(L)
         # 生成节点标签
         labels = {}
         for node in L.nodes:
             labels[node] = L.nodes[node]['name']
         # 点label
-        nx.draw_networkx_labels(L, pos, labels, font_size=12)
+        # nx.draw_networkx_labels(L, pos, labels, font_size=12)
         # 点
-        nx.draw_networkx_nodes(L, pos, node_color='b', node_size=500, alpha=0.8)
+        nx.draw_networkx_nodes(L, pos, node_color='b', node_size=30, alpha=0.8)
         # 边
-        nx.draw_networkx_edges(L, pos, width=[float(v['Ledge_feature']) for (r, c, v) in L.edges(data=True)], alpha=0.5,
+        nx.draw_networkx_edges(L, pos, alpha=0.5,
                                edge_color='g', connectionstyle='arc3, rad = 0.5')
         # 边label
         edge_labels = dict([((u, v,), d['Ledge_feature']) for u, v, d in L.edges(data=True)])
-        print('weight of all edges:', edge_labels)
-        nx.draw_networkx_edge_labels(L, pos, edge_labels=edge_labels, label_pos=0.3, font_size=7)
+        # print('weight of all edges:', edge_labels)
+        # nx.draw_networkx_edge_labels(L, pos, edge_labels=edge_labels, label_pos=0.3, font_size=7)
 
         # nx.draw(L,pos,connectionstyle='arc3, rad = 0.2')
         plt.axis('on')

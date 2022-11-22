@@ -70,8 +70,8 @@ def point_compression(trj_point_kdtree, poi_kdtree, trj_points, poi, trj_point_v
             continue
         symbol_poi_idx = items[0][0]  # 求出了当前区域内的代表 POI 节点的 id
         symbol_point = Point(str(symbol_poi_idx), symbol_poi_idx, symbol_poi_idx, {})
-        # if random.random() < 0.9:
-        #     continue
+        if random.random() < 0.9:
+            continue
         g.addVertex(symbol_point)  # 作为原图的点加入图中
         # 将范围内的轨迹端点与代表 POI 做映射，TODO：注意处理自环的情况
         for possible_index in possible_idx_set:
@@ -104,9 +104,9 @@ def build_graph(g, end2poi_dict, poiidx2point_dict, trips):
             start_idx, end_idx = 2 * i + 1, 2 * i
         if start_idx not in end2poi_dict or end_idx not in end2poi_dict:
             continue
-        # if random.random() < 0.2:
-        #     g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
-        g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
+        if random.random() < 0.2:
+            g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
+        # g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
     return g
 
 
@@ -138,7 +138,8 @@ if __name__ == "__main__":
     radius = 1000
     g, end2poi_dict, poiidx2point_dict = point_compression(trj_point_kdtree, poi_kdtree, endpoints, poi, trj_point_vis, end2poi_dict, radius)
     g = build_graph(g, end2poi_dict, poiidx2point_dict, trips)
-    g.drawGraph()
+    # g.drawGraph()
+    L = g.drawLineGraph()
 
     # for trip in trips: # 将轨迹起点和终点转换成米单位的坐标，分别存入kdtree，便于通过半径查找点
     #     time1, time2 = trip[0][2], trip[-1][2]
