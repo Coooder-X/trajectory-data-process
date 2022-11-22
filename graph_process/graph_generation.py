@@ -57,7 +57,7 @@ if __name__ == "__main__":
     fileInfo.trj_data_date = '05月01日'
     fileInfo.trj_file_name = '20200501_hz.h5'
     fileInfo.poi_dir = '../../hangzhou-POI'
-    fileInfo.poi_file_name = '商务住宅.xlsx'
+    fileInfo.poi_file_name_lst = ['商务住宅.xlsx', '风景名胜.xlsx']
 
     filter_step = 50
     use_cell = False
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         endpoints.append([x, y])
     trj_point_kdtree = buildKDTree(endpoints)
 
-    poi = getPOI_Coor(fileInfo.poi_dir, fileInfo.poi_file_name)
+    poi = getPOI_Coor(fileInfo.poi_dir, fileInfo.poi_file_name_lst)
     poi_kdtree = buildKDTree(poi)
     trj_point_vis = [False for i in range(len(endpoints))]
     end2poi_dict = {}

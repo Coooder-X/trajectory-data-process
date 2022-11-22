@@ -11,7 +11,7 @@ from data_process.SpatialRegionTools import gps2vocab, gps2cell, cell2coord
 
 import warnings
 
-from poi_process.read_poi import getPOI_Coor, buildKDTree, getPOI_CoorFiltered
+from poi_process.read_poi import getPOI_Coor, buildKDTree, getPOI_filter_by_topk, getPOI_filter_by_radius, lonlat2meters_poi
 from trip_process.read_trips import getTrips
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -23,7 +23,7 @@ class FileInfo:
         self.trj_data_date = '05月01日'
         self.trj_file_name = '20200501_hz.h5'
         self.poi_dir = '../../hangzhou-POI'
-        self.poi_file_name = '商务住宅.xlsx'
+        self.poi_file_name_lst = ['商务住宅.xlsx', '风景名胜.xlsx']
 
 
 def randomcolor():
@@ -71,9 +71,10 @@ def showTrips(fileInfo, filter_step, use_cell=False):
 
 def showPOI_Trips(fileInfo, filter_step, use_cell):
     trips, lines = getTrips(fileInfo, filter_step, use_cell)
-    poi_coor = getPOI_Coor(fileInfo.poi_dir, fileInfo.poi_file_name)
+    poi_coor = getPOI_Coor(fileInfo.poi_dir, fileInfo.poi_file_name_lst)
+    poi_coor = lonlat2meters_poi(poi_coor) # poi 坐标先转成米为单位，在kdtree中通过半径查找
     kdtree = buildKDTree(poi_coor)
-    poi_coor = getPOI_CoorFiltered(trips, poi_coor, kdtree, 1)  # 此处的 poi_coor 是根据轨迹起点、终点过滤后的
+    poi_coor = getPOI_filter_by_radius(trips, poi_coor, kdtree, 1000)  # 此处的 poi_coor 是根据轨迹起点、终点过滤后的，坐标单位为经纬度
 
     min_longitude = float('inf')
     min_latitude = float('inf')
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     fileInfo.trj_data_date = '05月01日'
     fileInfo.trj_file_name = '20200501_hz.h5'
     fileInfo.poi_dir = '../../hangzhou-POI'
-    fileInfo.poi_file_name = '商务住宅.xlsx'
+    fileInfo.poi_file_name_lst = ['商务住宅.xlsx', '风景名胜.xlsx']
     filter_step = 50
     use_cell = True
     # showTrips(fileInfo, filter_step, use_cell)
