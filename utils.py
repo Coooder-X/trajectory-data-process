@@ -94,3 +94,9 @@ def downsamplingDistort(trj_data, region):
             else:
                 noisetrips.append(noisetrip2)
     return noisetrips
+
+
+def cal_meter_dist(coord1, coord2):
+    x1, y1 = coord1[0], coord1[1]
+    x2, y2 = coord2[0], coord2[1]
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)

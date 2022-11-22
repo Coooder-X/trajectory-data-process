@@ -39,19 +39,20 @@ class Graph:
         for nodeId in G.nodes:
             labels[nodeId] = self.dict[nodeId].name
         # 生成节点位置
-        pos = nx.circular_layout(G)
+        pos = nx.random_layout(G)  # circular_layout
         # 画节点
-        nx.draw_networkx_nodes(G, pos, node_color='g', node_size=500, alpha=0.8)
+        nx.draw_networkx_nodes(G, pos, node_color='g', node_size=50, alpha=0.8)
         # 画边
         nx.draw_networkx_edges(G, pos, width=[float(v['edge_feature']) for (r, c, v) in G.edges(data=True)], alpha=0.5,
                                edge_color='b', connectionstyle='arc3, rad = 0.2')
         # 把边权重画出来
         edge_labels = dict([((u, v,), d['edge_feature']) for u, v, d in G.edges(data=True)])
         # print('weight of all edges:', edge_labels)
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.3, font_size=7)
+        # nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.3, font_size=7)
 
         # 画节点的标签
-        nx.draw_networkx_labels(G, pos, labels, font_size=16)
+        # nx.draw_networkx_labels(G, pos, labels, font_size=16)
+        plt.figure(figsize=(70, 70))
         plt.axis('on')
         # 去掉坐标刻度
         plt.xticks([])

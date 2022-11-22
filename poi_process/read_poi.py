@@ -75,6 +75,7 @@ def getPOI_filter_by_radius(trips, poi_coor, kdtree, radius):
     id_list = kdtree.query_ball_point(points, radius)
     coor_filtered = []
     for row in id_list:
+        # 加判断，如果 row 为空 list，则用 topk 的方式取一次 POI？
         if len(points) == 1:
             x, y = meters2lonlat(poi_coor[row][0], poi_coor[row][1])
             coor_filtered.append([x, y])
