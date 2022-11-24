@@ -1,3 +1,6 @@
+import json
+
+import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
@@ -15,7 +18,7 @@ from utils import lonlat2meters, meters2lonlat
 def getPOI_Coor(data_dir, file_name_lst):
     # print(os.listdir(data_dir))
     print('当前要读取的 POI 文件: ', file_name_lst)
-    file_list = os.listdir('../../hangzhou-POI')
+    file_list = os.listdir(data_dir)
     for i in range(len(file_list)):
         file_list[i] = data_dir + '/' + file_list[i]
         print(file_list[i])
@@ -23,10 +26,10 @@ def getPOI_Coor(data_dir, file_name_lst):
     total_poi_coor = []
     for file_name in file_name_lst:
         df1 = pd.read_excel(data_dir + '/' + file_name)  # 读取xlsx中的第一个sheet
-        poi_coor = df1.iloc[:, [-2, -1]].values
+        poi_coor = np.asarray(df1.iloc[:, [-2, -1]].values)
         print(poi_coor)
         total_poi_coor.extend(poi_coor)
-    return total_poi_coor
+    return np.asarray(total_poi_coor)
 
 
 """
@@ -97,7 +100,7 @@ def lonlat2meters_poi(poi_coor):
 def showPOI_Coor(poi_coor):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()
-
+    print('poi coord', poi_coor)
     ax.scatter(poi_coor[:, 0], poi_coor[:, 1], c='g', marker='o')
     ax.set_xlabel('lon')  # 画出坐标轴
     ax.set_ylabel('lat')
@@ -105,10 +108,12 @@ def showPOI_Coor(poi_coor):
 
 
 if __name__ == "__main__":
-    data_dir = '../../hangzhou-POI'
-    file_name = ['商务住宅.xlsx']
+    with open("../conf/graph_gen.json") as conf:
+        json_data = json.load(conf)
+        poi_dir = json_data['poi_dir']
+        poi_file_name_lst = json_data['poi_file_name_lst']
 
-    showPOI_Coor(getPOI_Coor(data_dir, file_name))
+        showPOI_Coor(getPOI_Coor(poi_dir, poi_file_name_lst))
 
 # data_dir = '../../hangzhou-POI'
 # print(os.listdir(data_dir))

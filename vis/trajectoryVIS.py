@@ -1,3 +1,4 @@
+import json
 import os
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from scipy import spatial
@@ -116,11 +117,14 @@ def showPOI_Trips(fileInfo, filter_step, use_cell):
 
 if __name__ == "__main__":
     fileInfo = FileInfo()
-    fileInfo.trj_data_path = '../../5月/'
-    fileInfo.trj_data_date = '05月01日'
-    fileInfo.trj_file_name = '20200501_hz.h5'
-    fileInfo.poi_dir = '../../hangzhou-POI'
-    fileInfo.poi_file_name_lst = ['商务住宅.xlsx', '风景名胜.xlsx']
+    with open("../conf/graph_gen.json") as conf:
+        # 读取配置文件
+        json_data = json.load(conf)
+        fileInfo.trj_data_path = json_data['trj_data_path']
+        fileInfo.trj_data_date = json_data['trj_data_date']
+        fileInfo.trj_file_name = json_data['trj_file_name']
+        fileInfo.poi_dir = json_data['poi_dir']
+        fileInfo.poi_file_name_lst = json_data['poi_file_name_lst']
     filter_step = 50
     use_cell = True
     # showTrips(fileInfo, filter_step, use_cell)
