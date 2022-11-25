@@ -75,7 +75,7 @@ def showPOI_Trips(fileInfo, filter_step, use_cell):
     poi_coor = getPOI_Coor(fileInfo.poi_dir, fileInfo.poi_file_name_lst)
     poi_coor = lonlat2meters_poi(poi_coor) # poi 坐标先转成米为单位，在kdtree中通过半径查找
     kdtree = buildKDTree(poi_coor)
-    poi_coor = getPOI_filter_by_radius(trips, poi_coor, kdtree, 1000)  # 此处的 poi_coor 是根据轨迹起点、终点过滤后的，坐标单位为经纬度
+    poi_coor = getPOI_filter_by_radius(trips, poi_coor, kdtree, 500)  # 此处的 poi_coor 是根据轨迹起点、终点过滤后的，坐标单位为经纬度
 
     min_longitude = float('inf')
     min_latitude = float('inf')
@@ -84,34 +84,38 @@ def showPOI_Trips(fileInfo, filter_step, use_cell):
 
     print('可视化轨迹数量：', len(trips))
 
-    # 画轨迹
+
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()
-    colors = [randomcolor() for i in range(len(trips))]
-    for index, line in enumerate(lines):
-        color = colors[index]
-        lc = mc.LineCollection(line, colors=color, linewidths=2)
-        ax.add_collection(lc)
+
+    # 画POI
     for index, trip in enumerate(trips):
-        color = colors[index]
         min_longitude = min(min_longitude, min(trip[:, 0]))
         min_latitude = min(min_latitude, min(trip[:, 1]))
         max_longitude = max(max_longitude, max(trip[:, 0]))
         max_latitude = max(max_longitude, max(trip[:, 1]))
-        ax.scatter(trip[:, 0], trip[:, 1], c=color, marker='o')
-
     tmp_poi_coor = []
     for coor in poi_coor:
         if coor[0] < min_longitude or coor[0] > max_longitude or coor[1] < min_latitude or coor[1] > max_latitude:
             continue
         tmp_poi_coor.append(coor)
     poi_coor = np.array(tmp_poi_coor)
+    # ax.scatter(poi_coor[:, 0], poi_coor[:, 1], c='g', marker='o', s=1)
 
-    # 画POI
-    ax.scatter(poi_coor[:, 0], poi_coor[:, 1], c='g', marker='o')
+    # 画轨迹
+    colors = [randomcolor() for i in range(len(trips))]
+    # for index, line in enumerate(lines):
+    #     color = colors[index]
+    #     lc = mc.LineCollection(line, colors=color, linewidths=1)
+    #     ax.add_collection(lc)
+    for index, trip in enumerate(trips):
+        color = colors[index]
+        ax.scatter(trip[0][0], trip[0][1], c=color, marker='o', s=2)
+        ax.scatter(trip[-1][0], trip[-1][1], c=color, marker='o', s=2)
 
     ax.set_xlabel('lon')  # 画出坐标轴
     ax.set_ylabel('lat')
+    plt.savefig('../../figs/trj_and_poi.png', dpi=600, bbox_inches='tight')
     plt.show()
 
 
