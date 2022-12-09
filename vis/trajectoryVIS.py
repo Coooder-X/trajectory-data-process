@@ -119,6 +119,17 @@ def showPOI_Trips(fileInfo, filter_step, use_cell):
     plt.show()
 
 
+def draw_points(points, color):
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.subplots()
+    for p in points:
+        ax.scatter(p[0], p[1], c=color if color is not None else randomcolor(), marker='o', s=4)
+
+    ax.set_xlabel('lon')  # 画出坐标轴
+    ax.set_ylabel('lat')
+    plt.show()
+
+
 if __name__ == "__main__":
     fileInfo = FileInfo()
     with open("../conf/graph_gen.json") as conf:

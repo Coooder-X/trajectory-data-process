@@ -1,13 +1,14 @@
 import json
 import random
 import numpy as np
+from matplotlib import pyplot as plt
+
 from graph_process.Graph import Graph
 from graph_process.Point import Point
 from poi_process.read_poi import buildKDTree, getPOI_Coor, lonlat2meters_poi
 from trip_process.read_trips import getTrips
 from utils import lonlat2meters, cal_meter_dist
-from vis.trajectoryVIS import FileInfo
-
+from vis.trajectoryVIS import FileInfo, randomcolor, draw_points
 
 # def is_connect(region, kdtree, points, radius):
 
@@ -144,6 +145,23 @@ if __name__ == "__main__":
     g = build_graph(g, end2poi_dict, poiidx2point_dict, trips)
     # g.drawGraph()
     L = g.drawLineGraph()
+
+    # 可以将缩点行为看作聚类，绘制缩点后的轨迹端点的簇分布
+    print('end2poi_dict', end2poi_dict)
+    color_dict = {}
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.subplots()
+    for end_p in end2poi_dict.keys():
+        if end2poi_dict[end_p] in color_dict.keys():
+            pass
+        else:
+            color_dict[end2poi_dict[end_p]] = randomcolor()
+        ax.scatter(endpoints[end_p][0], endpoints[end_p][1], c=color_dict[end2poi_dict[end_p]], marker='o', s=4)
+
+    ax.set_xlabel('lon')  # 画出坐标轴
+    ax.set_ylabel('lat')
+    plt.show()
+    draw_points(endpoints, 'g')
 
     # for trip in trips: # 将轨迹起点和终点转换成米单位的坐标，分别存入kdtree，便于通过半径查找点
     #     time1, time2 = trip[0][2], trip[-1][2]
