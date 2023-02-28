@@ -5,7 +5,7 @@ from scipy.spatial import Delaunay  # version 1.4.1
 import matplotlib.pyplot as plt  # version 3.1.2
 
 from data_process.hierarchical_clustering import get_trip_endpoints
-from poi_process.read_poi import getPOI_Coor, lonlat2meters_poi, buildKDTree
+from poi_process.read_poi import buildKDTree, lonlat2meters_coords
 from utils import UnionFindSet
 from vis.trajectoryVIS import FileInfo, randomcolor
 
@@ -149,7 +149,7 @@ def delaunay_clustering(k: int, theta: int, od_points: list):
     return point_cluster_dict, cluster_point_dict
 
 
-def draw_DT_clusters(cluster_point_dict: dict, od_points: list, k: int, theta: int):
+def draw_DT_clusters(cluster_point_dict: dict, od_points: list, k: int, theta: int, start_hour: int, end_hour: int):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()
     color_dict = {idx: randomcolor() for idx in cluster_point_dict.keys()}
@@ -164,20 +164,36 @@ def draw_DT_clusters(cluster_point_dict: dict, od_points: list, k: int, theta: i
 
     ax.set_xlabel('lon')  # 画出坐标轴
     ax.set_ylabel('lat')
-    plt.savefig(f'../../figs/三角剖分聚类_k{k}_theta{theta}_{len(od_points)}points.png', dpi=300)
-    # plt.show()
+    if start_hour is not None:
+        plt.savefig(f'../../figs/三角剖分聚类_k{k}_theta{theta}_{len(od_points)}points_time{start_hour}-{end_hour}.png', dpi=300)
+    else:
+        plt.savefig(f'../../figs/三角剖分聚类_k{k}_theta{theta}_{len(od_points)}points.png', dpi=300)
+    plt.show()
+
+
+def od_points_filter_by_hour(od_points, start_hour, end_hour):
+    """
+    :param od_points:   od 点 npArray，原素是 [x, y, timestamp]
+    :param start_hour:  几点开始
+    :param end_hour:    几点结束
+    :return:            该时间闭区间内的 od 点 npArray
+    """
+    return od_points[(start_hour * 3600 <= od_points[:, 2]) & (od_points[:, 2] <= end_hour * 3600)]
 
 
 if __name__ == '__main__':
-    k, theta = 10, 10
+    k, theta = 7, 4
     print('开始读取OD点')
     start_time = datetime.now()
-    od_points = np.asarray(lonlat2meters_poi(get_data()))
+    od_points = np.asarray(lonlat2meters_coords(coords=get_data(), use_time=True))
+    start_hour, end_hour = 10, 15
+    od_points = od_points_filter_by_hour(od_points, start_hour, end_hour)[:, 0:2]  # 过滤出所有在该时间段的 od 点，并去掉时间戳留下坐标
     print('读取OD点结束，用时: ', (datetime.now() - start_time))
     print('pos nums', len(od_points), '\n开始聚类')
     start_time = datetime.now()
     point_cluster_dict, cluster_point_dict = delaunay_clustering(k=k, theta=theta, od_points=od_points)
+    end_time = datetime.now()
     print('结束聚类，用时: ', (datetime.now() - start_time))
-    # draw_DT_clusters(cluster_point_dict, od_points, k, theta)
-    # draw_time = datetime.now()
-    # print('画图用时: ', draw_time - end_time)
+    draw_DT_clusters(cluster_point_dict, od_points, k, theta, start_hour, end_hour)
+    draw_time = datetime.now()
+    print('画图用时: ', draw_time - end_time)

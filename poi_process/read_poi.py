@@ -97,6 +97,25 @@ def lonlat2meters_poi(poi_coor):
     return  poi_meters_coor
 
 
+def lonlat2meters_coords(coords, use_time=False):
+    meters_coor = []
+    for coord in coords:
+        (x, y), time_stamp = (lonlat2meters(coord[0], coord[1]), coord[2])
+        if use_time:
+            meters_coor.append([x, y, time_stamp])
+        else:
+            meters_coor.append([x, y])
+    return meters_coor
+
+
+def meters2lonlat_list(coord_lst):
+    ans = []
+    for p in coord_lst:
+        x, y = meters2lonlat(p[0], p[1])
+        ans.append([x, y])
+    return ans
+
+
 def showPOI_Coor(poi_coor):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()
