@@ -170,12 +170,14 @@ def draw_DT_clusters(cluster_point_dict: dict, od_points: list, k: int, theta: i
 
 if __name__ == '__main__':
     k, theta = 10, 10
+    print('开始读取OD点')
+    start_time = datetime.now()
     od_points = np.asarray(lonlat2meters_poi(get_data()))
+    print('读取OD点结束，用时: ', (datetime.now() - start_time))
     print('pos nums', len(od_points), '\n开始聚类')
     start_time = datetime.now()
     point_cluster_dict, cluster_point_dict = delaunay_clustering(k=k, theta=theta, od_points=od_points)
-    end_time = datetime.now()
-    print('结束聚类，用时: ', (end_time - start_time))
+    print('结束聚类，用时: ', (datetime.now() - start_time))
     # draw_DT_clusters(cluster_point_dict, od_points, k, theta)
     # draw_time = datetime.now()
     # print('画图用时: ', draw_time - end_time)
