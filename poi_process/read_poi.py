@@ -97,6 +97,14 @@ def lonlat2meters_poi(poi_coor):
     return  poi_meters_coor
 
 
+def meters2lonlat_list(coord_lst):
+    ans = []
+    for p in coord_lst:
+        x, y = meters2lonlat(p[0], p[1])
+        ans.append([x, y])
+    return ans
+
+
 def showPOI_Coor(poi_coor):
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()

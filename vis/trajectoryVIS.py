@@ -50,6 +50,23 @@ colorsOfLabel = [
 ]
 
 
+def showODs(fileInfo, filter_step, use_cell=False):
+    trips, lines = getTrips(fileInfo, filter_step, use_cell)
+    print('可视化轨迹数量：', len(trips))
+    colors = [randomcolor() for i in range(len(trips))]
+
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.subplots()
+    for index, trip in enumerate(trips):
+        color = colors[index]
+        ax.arrow(trip[0][0], trip[0][1], trip[-1][0]-trip[0][0], trip[-1][1]-trip[0][1], shape="full", fc=color, ec=color, alpha=0.9,
+                 overhang=0.5)
+
+    ax.set_xlabel('lon')  # 画出坐标轴
+    ax.set_ylabel('lat')
+    plt.show()
+
+
 def showTrips(fileInfo, filter_step, use_cell=False):
     trips, lines = getTrips(fileInfo, filter_step, use_cell)
     print('可视化轨迹数量：', len(trips))
@@ -144,6 +161,7 @@ if __name__ == "__main__":
     use_cell = True
     # showTrips(fileInfo, filter_step, use_cell)
     showPOI_Trips(fileInfo, filter_step, False) # poi暂时没有网格化，因此同时可视化轨迹和poi时，轨迹也不能网格化，否则坐标不同，报错
+    # showODs(fileInfo, filter_step, use_cell)
 
     # # print(os.listdir('../../5月/05月01日'))
     # data_path = '../../5月/'

@@ -1,6 +1,6 @@
 {
 	"timecellsize": 120,
-	"distcellsize": 250,
+	"distcellsize": 950,
 	"delta": 1.0,
 	"nointeresttime": 3300.0,
 	"interesttime": 1100.0,

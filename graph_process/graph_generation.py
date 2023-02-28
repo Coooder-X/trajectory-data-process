@@ -1,8 +1,11 @@
 import json
+import os
+import pickle
 import random
 import numpy as np
 from matplotlib import pyplot as plt
 
+from data_process.SpatialRegionTools import gps2cell
 from graph_process.Graph import Graph
 from graph_process.Point import Point
 from poi_process.read_poi import buildKDTree, getPOI_Coor, lonlat2meters_poi
@@ -72,8 +75,8 @@ def point_compression(trj_point_kdtree, poi_kdtree, trj_points, poi, trj_point_v
             continue
         symbol_poi_idx = items[0][0]  # 求出了当前区域内的代表 POI 节点的 id
         symbol_point = Point(str(symbol_poi_idx), symbol_poi_idx, symbol_poi_idx, {})
-        if random.random() < 0.9:
-            continue
+        # if random.random() < 0.9:  #  防止图太大，过滤一部分点
+        #     continue
         g.addVertex(symbol_point)  # 作为原图的点加入图中
         # 将范围内的轨迹端点与代表 POI 做映射，TODO：注意处理自环的情况
         for possible_index in possible_idx_set:
@@ -96,6 +99,33 @@ def point_compression(trj_point_kdtree, poi_kdtree, trj_points, poi, trj_point_v
     return g, end2poi_dict, poiidx2point_dict
 
 
+def point_compression_with_cell(endpoints):
+    cell_color_dict = {}
+    point_color_dict = {}
+    with open("../data/region.pkl", 'rb') as file:
+        region = pickle.loads(file.read())
+    for i, point in enumerate(endpoints):
+        cell = gps2cell(region, point[0], point[1])
+        if cell not in cell_color_dict.keys():
+            color = randomcolor()
+            cell_color_dict[cell] = color
+            point_color_dict[i] = color
+        else:
+            point_color_dict[i] = cell_color_dict[cell]
+    return point_color_dict
+
+
+def draw_point_compression_with_cell(endpoints, point_color_dict):
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.subplots()
+    print('开始绘图')
+    for i, point in enumerate(endpoints):
+        ax.scatter(point[0], point[1], c=point_color_dict[i], marker='o', s=4)
+    ax.set_xlabel('lon')  # 画出坐标轴
+    ax.set_ylabel('lat')
+    plt.show()
+
+
 def build_graph(g, end2poi_dict, poiidx2point_dict, trips):
     # TODO: 按一定规则过滤一下节点和边，使得可视化结果有可读性
     for i, trip in enumerate(trips):
@@ -106,9 +136,9 @@ def build_graph(g, end2poi_dict, poiidx2point_dict, trips):
             start_idx, end_idx = 2 * i + 1, 2 * i
         if start_idx not in end2poi_dict or end_idx not in end2poi_dict:
             continue
-        if random.random() < 0.2:
-            g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
-        # g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
+        # if random.random() < 0.2:  #  防止图太大，过滤一部分边
+        #     g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
+        g.addDirectLine(poiidx2point_dict[end2poi_dict[start_idx]], [[poiidx2point_dict[end2poi_dict[end_idx]], 1]])  # 边权暂时设置为1 TODO：边权用轨迹表示代替
     return g
 
 
@@ -121,9 +151,9 @@ if __name__ == "__main__":
         fileInfo.trj_data_date = json_data['trj_data_date']
         fileInfo.trj_file_name = json_data['trj_file_name']
         fileInfo.poi_dir = json_data['poi_dir']
-        fileInfo.poi_file_name_lst = json_data['poi_file_name_lst']
+        fileInfo.poi_file_name_lst = os.listdir(fileInfo.poi_dir)  # json_data['poi_file_name_lst']
 
-    filter_step = 50
+    filter_step = 10
     use_cell = False
     trips, lines = getTrips(fileInfo, filter_step, use_cell)
     trip_index = [i for i in range(len(trips))]
@@ -133,6 +163,8 @@ if __name__ == "__main__":
         endpoints.append([x, y])
         x, y = lonlat2meters(trip[-1][0], trip[-1][1])
         endpoints.append([x, y])
+    # todo: endpoints 按空间排序
+    endpoints = sorted(endpoints, key=lambda x: (x[0], x[1]))
     trj_point_kdtree = buildKDTree(endpoints)
 
     poi = getPOI_Coor(fileInfo.poi_dir, fileInfo.poi_file_name_lst)
@@ -140,11 +172,37 @@ if __name__ == "__main__":
     poi_kdtree = buildKDTree(poi)
     trj_point_vis = [False for i in range(len(endpoints))]
     end2poi_dict = {}
-    radius = 1000
+    radius = 700
     g, end2poi_dict, poiidx2point_dict = point_compression(trj_point_kdtree, poi_kdtree, endpoints, poi, trj_point_vis, end2poi_dict, radius)
-    g = build_graph(g, end2poi_dict, poiidx2point_dict, trips)
+    # g = build_graph(g, end2poi_dict, poiidx2point_dict, trips)
     # g.drawGraph()
-    L = g.drawLineGraph()
+    # L = g.drawLineGraph()
+
+    # ============== 可以将缩点行为看作聚类，绘制缩点后的轨迹端点的簇分布=====================================
+    # print('end2poi_dict', end2poi_dict)
+    color_dict = {}
+    fig = plt.figure(figsize=(20, 10))
+    ax = fig.subplots()
+    print('开始绘图')
+    for end_p in end2poi_dict.keys():
+        if end2poi_dict[end_p] in color_dict.keys():
+            pass
+        else:
+            color_dict[end2poi_dict[end_p]] = randomcolor()
+        ax.scatter(endpoints[end_p][0], endpoints[end_p][1], c=color_dict[end2poi_dict[end_p]], marker='o', s=4)
+    print('结束绘图，开始保存')
+    ax.set_xlabel('lon')  # 画出坐标轴
+    ax.set_ylabel('lat')
+    plt.savefig(f'../../figs/缩点算法轨迹端点聚类_r={radius}.png', dpi=300)
+    plt.show()
+    draw_points(endpoints, 'g')
+    #===============================================================================================
+
+    #+++++++ 不用算法缩点，而是把处于一个cell的轨迹端点看作属于一个簇 ++++++++++++++++++++++++++++++++++++++
+    # point_color_dict = point_compression_with_cell(endpoints)
+    # print(len(endpoints), len(point_color_dict.keys()))
+    # draw_point_compression_with_cell(endpoints, point_color_dict)
+    # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     # 可以将缩点行为看作聚类，绘制缩点后的轨迹端点的簇分布
     print('end2poi_dict', end2poi_dict)

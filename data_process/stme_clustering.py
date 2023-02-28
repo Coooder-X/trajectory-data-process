@@ -1,11 +1,10 @@
 import os
-
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from shapely.geometry import Point, MultiPoint, GeometryCollection
-
-from data_process.hierarchical_clustering import get_trip_endpoints
+from sklearn.cluster import DBSCAN
+from data_process.hierarchical_clustering import get_trip_endpoints, sklearn_cluster
 from stme_module import STME
 from vis.trajectoryVIS import FileInfo, randomcolor
 
@@ -121,7 +120,7 @@ def stme_in_cluster(coord_list, first_step, per_step):
         if cur_df is None:
             continue
         # 对比当前簇内聚类前后的图片，保存
-        draw_save_single_cluster_compare(i, cur_points, cur_df, k, kt, min_pts)
+        # draw_save_single_cluster_compare(i, cur_points, cur_df, k, kt, min_pts)
         cur_labels = cur_df['cluster']
         print(
             f'当前用于聚类的点数为：{len(cur_points)}，本次簇内聚类产生簇数为{cur_num_clusters}, 产生的噪声点个数：{len([cur_labels == -1][0])}')
@@ -172,7 +171,7 @@ def stme():
     axis = figure.subplots()
     for p in coord_list[label_of_clusters == -1]:
         x, y = p[0], p[1]
-        axis.scatter(x, y, c='#000', marker='o', s=10)
+        axis.scatter(x, y, c='#000', marker='o', s=4)
     for n in range(num_of_clusters):
         # print(n, coords[cluster_labels == n + 1])
         points = []
@@ -180,7 +179,7 @@ def stme():
         for p in coord_list[label_of_clusters == n + 1]:
             x, y = p[0], p[1]
             points.append(Point(x, y))
-            axis.scatter(x, y, c=cur_color, marker='o', s=10)
+            axis.scatter(x, y, c=cur_color, marker='o', s=4)
         # points = [Point(i, j) for i, j in coords[cluster_labels == n + 1]]
         multi_points = MultiPoint(points)
         hulls.append(multi_points.convex_hull)
@@ -192,12 +191,12 @@ def stme():
     return hulls
 
 
-def draw_save_single_cluster_compare(cluster_id, cluster_points, dataframe, k, kt, min_pts):
+def draw_save_single_cluster_compare(cluster_id, cluster_points, df_cluster_label_col, k, kt, min_pts):
     """
     对一个聚类结果中的一个簇进行聚类，可视化前后的对比，分别存储到图片。
     :param cluster_id: 当前簇的 id
     :param cluster_points: 当前簇中的点
-    :param dataframe: 当前聚类结果的 dataframe
+    :param df_cluster_label_col: 当前聚类结果的 labels ndarray
     :param k:
     :param kt:
     :param min_pts:
@@ -206,7 +205,7 @@ def draw_save_single_cluster_compare(cluster_id, cluster_points, dataframe, k, k
     cluster_points = np.array(cluster_points)
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()
-    ax.scatter(cluster_points[:, 0], cluster_points[:, 1], c='g', marker='o', s=20)
+    ax.scatter(cluster_points[:, 0], cluster_points[:, 1], c='g', marker='o', s=4)
     ax.set_xlabel('lon')  # 画出坐标轴
     ax.set_ylabel('lat')
     folder = '../../figs/single_cluster_compare'
@@ -218,17 +217,17 @@ def draw_save_single_cluster_compare(cluster_id, cluster_points, dataframe, k, k
 
     fig = plt.figure(figsize=(20, 10))
     ax = fig.subplots()
-    df_cluster_label_col = dataframe['cluster']
-    cluster_label_set = list(set(df_cluster_label_col.values.tolist()))
-    for p in cluster_points[df_cluster_label_col == -1]:
+    # df_cluster_label_col = dataframe['cluster']
+    cluster_label_set = list(set(df_cluster_label_col[df_cluster_label_col[:]]))
+    for p in cluster_points[df_cluster_label_col[df_cluster_label_col[:] == -1]]:
         x, y = p[0], p[1]
-        ax.scatter(x, y, c='#000', marker='o', s=20)
+        ax.scatter(x, y, c='#000', marker='o', s=4)
     for n in cluster_label_set:
         # color = randomcolor()
-        for p in cluster_points[df_cluster_label_col == n]:
+        for p in cluster_points[df_cluster_label_col[df_cluster_label_col[:] == n]]:
             x, y = p[0], p[1]
             # print('x, y', x, y)
-            ax.scatter(x, y, c='r', marker='o', s=20)
+            ax.scatter(x, y, c='r', marker='o', s=4)
     ax.set_xlabel('lon')  # 画出坐标轴
     ax.set_ylabel('lat')
     # plt.savefig(f'{folder}/cluster{cluster_id}_k{k}_kt{kt}_mpts{min_pts}_after.png')
@@ -245,51 +244,70 @@ def draw_clusters(df_cluster_label_col, num_clusters, cluster_type):
     ax = fig.subplots()
     cluster_label_set = list(set(df_cluster_label_col.values.tolist()))
     # print(coords.shape, cluster_labels.shape)
+    points_num = 0
+    points_num += len(coords[df_cluster_label_col == -1])
     for p in coords[df_cluster_label_col == -1]:
         x, y = p[0], p[1]
-        ax.scatter(x, y, c='#000', marker='o', s=10)
+        ax.scatter(x, y, c='#000', marker='o', s=4)
     for n in cluster_label_set:
         points = []
         color = randomcolor()
+        points_num += len(coords[df_cluster_label_col == n])
         for p in coords[df_cluster_label_col == n]:
             x, y = p[0], p[1]
             points.append(Point(x, y))
-            ax.scatter(x, y, c=color, marker='o', s=10)
+            ax.scatter(x, y, c=color, marker='o', s=4)
         # points = [Point(i, j) for i, j in coords[cluster_labels == n + 1]]
         multipoints = MultiPoint(points)
         # hulls.append(multipoints.convex_hull)
 
     ax.set_xlabel('lon')  # 画出坐标轴
     ax.set_ylabel('lat')
-    plt.savefig(f'../../figs/{cluster_type}聚类_k{k}_kt{kt}_mpts{min_pts}.png', dpi=300)
+    plt.savefig(f'../../figs/{cluster_type}聚类_k{k}_kt{kt}_mpts{min_pts}_{points_num}points.png', dpi=300)
     # plt.show()
 
 
 if __name__ == "__main__":
     fileInfo = FileInfo()
-    coords = get_trip_endpoints(fileInfo, 50, False)
+    coords = get_trip_endpoints(fileInfo, 10, False)
     coords = np.array(coords)
 
     # 迭代聚类
     # df, label_set, num_clusters = stme_iteration(coords, 4)
     # print(f'簇个数：{num_clusters}')
     # cluster_labels = df['cluster']
-    # draw_clusters(cluster_labels, '迭代')
+    # draw_clusters(cluster_labels, num_clusters, '迭代')
 
-    # # 簇内聚类
-    # df, cluster_label_list = stme_in_cluster(coords, 4, 0)
-    # print('最终聚类结果：', cluster_label_list)
-    # print(sorted(cluster_label_list))
-    # cluster_labels = df['cluster']
-    # num_clusters = max(cluster_label_list) + 1
-    # draw_clusters(cluster_labels, num_clusters, '簇内')
+    # 簇内聚类
+    df, cluster_label_list = stme_in_cluster(coords, 4, 0)
+    print('最终聚类结果：', cluster_label_list)
+    print(sorted(cluster_label_list))
+    cluster_labels = df['cluster']
+    num_clusters = max(cluster_label_list) + 1
+    draw_clusters(cluster_labels, num_clusters, '簇内')
 
-    # df, _, num_clusters = stme_ones(coords, 0)
-    # draw_clusters(df['cluster'], num_clusters, '')
+    # # 单次
+    # df, _, num_clusters = stme_ones(coords, 0, k, kt, min_pts)
+    # draw_clusters(df['cluster'], num_clusters, '单次')
 
-    # 单簇 簇内聚类 test
-    df, label_set, num_clusters = stme_iteration(coords, 4)
-    cluster_id = 5
-    cluster_points = coords[df['cluster'] == cluster_id]
-    df, _, num_clusters = stme_ones(cluster_points, 0, 14, 7, 7)
-    draw_save_single_cluster_compare(cluster_id, cluster_points, df, 20, 10, 10)
+    # # 单簇 簇内聚类 test
+    # df, label_set, num_clusters = stme_iteration(coords, 4)
+    # cluster_id = 5
+    # cluster_points = coords[df['cluster'] == cluster_id]
+    # # df, _, num_clusters = stme_ones(cluster_points, 0, 14, 7, 7)
+    # kms_per_radian = 6378.1370 * 5  # 6371.0086
+    # # define epsilon as 0.5 kilometers, converted to radians for use by haversine
+    # # This uses the 'haversine' formula to calculate the great-circle distance between two points
+    # # that is, the shortest distance over the earth's surface
+    # # http://www.movable-type.co.uk/scripts/latlong.html
+    # epsilon = 1 / kms_per_radian
+    # db_coords = []
+    # for p in cluster_points:
+    #     db_coords.append([p[0], p[1]])
+    # # # 尝试使用 sklearn 自带的层次聚类做簇内聚类
+    # # sklearn_cluster(db_coords, 4)
+    # # # 尝试使用 DBSCAN 进行簇内聚类
+    # # db = DBSCAN(eps=epsilon, min_samples=25, metric='haversine').fit(db_coords)
+    # # cluster_labels = db.labels_
+    # # print('cluster_labels', cluster_labels)
+    # # draw_save_single_cluster_compare(cluster_id, cluster_points, cluster_labels, 20, 10, 10)

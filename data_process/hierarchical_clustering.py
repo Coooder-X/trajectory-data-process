@@ -40,24 +40,29 @@ def get_trip_endpoints(fileInfo, filter_step, use_cell):
     return points
 
 
-# 2D embedding of the digits dataset
-if __name__ == "__main__":
-    fileInfo = FileInfo()
-    points = get_trip_endpoints(fileInfo, 50, False)
+def sklearn_cluster(points, n_clusters):
     min_max_scaler = preprocessing.MinMaxScaler()
     points = min_max_scaler.fit_transform(points)
     print("Computing embedding")
 
     linkage = 'average'
-    clustering = AgglomerativeClustering(linkage=linkage, affinity='euclidean' , n_clusters=150) # , n_clusters=5
+    clustering = AgglomerativeClustering(linkage=linkage, affinity='euclidean', n_clusters=n_clusters)  # , n_clusters=5
     t0 = time()
     clustering.fit(points)
     labels = clustering.fit_predict(points)
     print('labels', labels, len(labels))
     print("%s : %.2fs" % (linkage, time() - t0))
+    return labels
 
-    plt.scatter(points[:, 0], points[:, 1], c=labels, s=5)
+
+# 2D embedding of the digits dataset
+if __name__ == "__main__":
+    fileInfo = FileInfo()
+    end_points = get_trip_endpoints(fileInfo, 50, False)
+    labels = sklearn_cluster(end_points, 150)
+    plt.scatter(end_points[:, 0], end_points[:, 1], c=labels, s=5)
     plt.show()
+
 
     # with open("../conf/graph_gen.json") as conf:
     #     json_data = json.load(conf)
